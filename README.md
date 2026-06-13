@@ -22,34 +22,40 @@ backend/   Node.js + Express API, PostgreSQL, 60s sweep job
 frontend/  React app with SVG library map (polls server every 5s)
 ```
 
-## Timer rules (configurable via env)
+## Environment Variables
 
-| Rule | Default | Env var |
-|------|---------|---------|
-| 'Still here?' heartbeat interval | 2 hours | `HEARTBEAT_INTERVAL_MIN` |
-| 'Still here?' response window | 5 minutes | `HEARTBEAT_GRACE_MIN` |
-| Max Away duration | 20 minutes | `AWAY_MAX_MIN` |
-| Sweep interval | 1 minute | `SWEEP_INTERVAL_SEC` |
+Copy `backend/.env.example` to `backend/.env` and adjust as needed:
 
-## Quick start
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `PORT` | 4000 | Server port |
+| `HEARTBEAT_INTERVAL_MIN` | 120 | Minutes between heartbeat prompts |
+| `HEARTBEAT_GRACE_MIN` | 5 | Minutes to respond to heartbeat |
+| `AWAY_MAX_MIN` | 20 | Maximum away duration in minutes |
+| `SWEEP_INTERVAL_SEC` | 60 | Background sweep runs every N seconds |
+| `LIBRARIAN_PASSWORD` | deskguard2024 | Librarian access password |
+| `QR_BASE_URL` | http://localhost:3000 | Base URL encoded in QR codes |
 
-### 1. Backend
+## How to Run
+
+### 1. Start the Backend API
 
 ```bash
 cd backend
-cp .env.example .env   # edit DATABASE_URL
 npm install
-npm run migrate        # creates tables + seed desks
-npm start              # starts API + sweep job on :4000
+npm start
 ```
+The server will automatically create a local SQLite database (`./data/deskguard.db`), seed the 24 desks, and start the API and sweep job on port 4000.
 
-### 2. Frontend
+### 2. Start the Frontend React App
 
+Open a new terminal window:
 ```bash
 cd frontend
 npm install
-npm start              # serves React app on :3000, proxies API to :4000
+npm start
 ```
+This serves the React application on port 3000 and proxies API calls to the backend.
 
 Open http://localhost:3000 for the live map, and http://localhost:3000/librarian for the librarian dashboard.
 
