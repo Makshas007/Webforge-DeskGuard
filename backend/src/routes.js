@@ -3,40 +3,87 @@ const desks = require('./desks');
 
 const router = express.Router();
 
+// Wrap handler so thrown errors with .status are sent as proper HTTP responses.
+// Supports both sync functions and async functions (for QR generation).
 const wrap = (fn) => (req, res) => {
-  Promise.resolve(fn(req, res)).catch((err) => {
+  try {
+    const result = fn(req, res);
+    // If the result is a promise (async function like generateQR), handle it
+    if (result && typeof result.then === 'function') {
+      result.catch((err) => {
+        const status = err.status || 500;
+        if (status === 500) console.error(err);
+        res.status(status).json({ error: err.message || 'Internal error' });
+      });
+    }
+  } catch (err) {
     const status = err.status || 500;
     if (status === 500) console.error(err);
     res.status(status).json({ error: err.message || 'Internal error' });
-  });
+  }
 };
 
-router.get('/desks', wrap(async (_req, res) => {
-  res.json(await desks.listDesks());
+// ---------------------------------------------------------------------------
+// Desk endpoints
+// ---------------------------------------------------------------------------
+
+router.get('/desks', wrap((_req, res) => {
+  res.json(desks.getAllDesks());
 }));
 
-router.post('/desks/:code/checkin', wrap(async (req, res) => {
-  res.json(await desks.checkin(req.params.code, req.body.studentId));
+router.get('/desks/:id', wrap((req, res) => {
+  res.json(desks.getDesk(Number(req.params.id)));
 }));
 
-router.post('/desks/:code/away', wrap(async (req, res) => {
-  res.json(await desks.setAway(req.params.code));
+router.get('/desks/:id/qr', wrap(async (req, res) => {
+  const baseUrl = req.query.baseUrl || process.env.QR_BASE_URL || 'http://localhost:3000';
+  const result = await desks.generateQR(Number(req.params.id), baseUrl);
+  res.json(result);
 }));
 
-router.post('/desks/:code/heartbeat', wrap(async (req, res) => {
-  res.json(await desks.heartbeat(req.params.code));
+router.post('/desks/:id/checkin', wrap((req, res) => {
+  const result = desks.checkIn(Number(req.params.id), req.body.studentName);
+  res.status(201).json(result);
 }));
 
-router.post('/desks/:code/checkout', wrap(async (req, res) => {
-  res.json(await desks.checkout(req.params.code));
+// ---------------------------------------------------------------------------
+// Session endpoints
+// ---------------------------------------------------------------------------
+
+router.post('/session/checkout', wrap((req, res) => {
+  res.json(desks.checkOut(req.body.sessionToken));
 }));
 
-router.get('/librarian/abandoned', wrap(async (_req, res) => {
-  res.json(await desks.listAbandoned());
+router.post('/session/away', wrap((req, res) => {
+  res.json(desks.goAway(req.body.sessionToken));
 }));
 
-router.post('/librarian/desks/:code/reset', wrap(async (req, res) => {
-  res.json(await desks.reset(req.params.code));
+router.post('/session/return', wrap((req, res) => {
+  res.json(desks.returnFromAway(req.body.sessionToken));
+}));
+
+router.post('/session/heartbeat', wrap((req, res) => {
+  res.json(desks.heartbeatRespond(req.body.sessionToken));
+}));
+
+router.get('/session/:token', wrap((req, res) => {
+  res.json(desks.getSession(req.params.token));
+}));
+
+// ---------------------------------------------------------------------------
+// Librarian endpoints
+// ---------------------------------------------------------------------------
+
+router.get('/librarian/abandoned', wrap((_req, res) => {
+  res.json(desks.getAbandonedLog());
+}));
+
+router.post('/librarian/release/:deskId', wrap((req, res) => {
+  res.json(desks.forceRelease(Number(req.params.deskId)));
+}));
+
+router.get('/librarian/stats', wrap((_req, res) => {
+  res.json(desks.getStats());
 }));
 
 module.exports = router;

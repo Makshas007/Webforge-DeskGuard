@@ -1,29 +1,39 @@
--- DeskGuard schema
+-- DeskGuard schema (SQLite)
 -- A desk is a physical seat. Its live status is derived from its active session
 -- plus the server-side sweep job.
 
 CREATE TABLE IF NOT EXISTS desks (
-  id          SERIAL PRIMARY KEY,
-  code        TEXT NOT NULL UNIQUE,        -- value encoded in the desk QR code
-  label       TEXT NOT NULL,               -- human label, e.g. 'A1'
-  x           INTEGER NOT NULL,            -- SVG map coordinates
-  y           INTEGER NOT NULL,
-  -- status: free | occupied | away | abandoned
-  status      TEXT NOT NULL DEFAULT 'free'
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  label    TEXT NOT NULL UNIQUE,
+  zone     TEXT NOT NULL,
+  row_num  INTEGER NOT NULL,
+  col_num  INTEGER NOT NULL,
+  status   TEXT NOT NULL DEFAULT 'free'
 );
 
 CREATE TABLE IF NOT EXISTS sessions (
-  id                SERIAL PRIMARY KEY,
-  desk_id           INTEGER NOT NULL REFERENCES desks(id),
-  student_id        TEXT NOT NULL,
-  checkin_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
-  last_heartbeat_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  away_until        TIMESTAMPTZ,           -- set while Away; NULL otherwise
-  -- active | ended | abandoned
-  state             TEXT NOT NULL DEFAULT 'active',
-  ended_at          TIMESTAMPTZ
+  id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+  token                TEXT NOT NULL UNIQUE,
+  desk_id              INTEGER NOT NULL,
+  student_name         TEXT NOT NULL,
+  checked_in_at        TEXT NOT NULL,
+  last_heartbeat_at    TEXT NOT NULL,
+  heartbeat_pending    INTEGER NOT NULL DEFAULT 0,
+  heartbeat_prompted_at TEXT,
+  away_since           TEXT,
+  ended_at             TEXT,
+  end_reason           TEXT,
+  FOREIGN KEY (desk_id) REFERENCES desks(id)
 );
 
--- At most one active session per desk.
-CREATE UNIQUE INDEX IF NOT EXISTS one_active_session_per_desk
-  ON sessions (desk_id) WHERE state = 'active';
+CREATE TABLE IF NOT EXISTS abandoned_log (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  desk_id       INTEGER NOT NULL,
+  desk_label    TEXT NOT NULL,
+  student_name  TEXT NOT NULL,
+  reason        TEXT NOT NULL,
+  abandoned_at  TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_sessions_active ON sessions(desk_id) WHERE ended_at IS NULL;
+CREATE INDEX IF NOT EXISTS idx_sessions_token ON sessions(token);

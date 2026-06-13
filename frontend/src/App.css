@@ -1,0 +1,50 @@
+/* ==========================================================================
+   App.css — App-specific overrides & page transition styles
+   ========================================================================== */
+
+/* Page transitions */
+.page-enter {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.page-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity var(--transition-slow), transform var(--transition-slow);
+}
+
+/* App-level notification toast (future use) */
+.toast-container {
+  position: fixed;
+  bottom: var(--space-lg);
+  right: var(--space-lg);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.toast {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  box-shadow: var(--shadow-lg);
+  animation: slideUp var(--transition-normal) ease;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  max-width: 360px;
+}
+
+/* Focus-visible for accessibility */
+.app-container :focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Override for SVG elements inside map */
+.map-svg-wrapper :focus-visible {
+  outline: none;
+}
