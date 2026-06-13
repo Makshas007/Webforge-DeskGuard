@@ -3,7 +3,7 @@
 // ==========================================================================
 import { useState, useEffect, useCallback } from 'react';
 
-const API = '/api';
+const API = process.env.REACT_APP_API_URL || '/api';
 
 async function request(url, options = {}) {
   const res = await fetch(`${API}${url}`, {
@@ -48,7 +48,7 @@ export const getStats = () => request('/librarian/stats');
 // ==========================================================================
 // Custom polling hook — polls fetchFn every intervalMs
 // ==========================================================================
-export function usePolling(fetchFn, intervalMs = 5000) {
+export function usePolling(fetchFn, intervalMs = 1000) {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);

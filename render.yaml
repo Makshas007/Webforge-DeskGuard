@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: deskguard-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm install
+    startCommand: npm start
+    disk:
+      name: deskguard-data
+      mountPath: /opt/render/project/src/backend/data
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: "4000"
